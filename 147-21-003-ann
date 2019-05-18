@@ -26,4 +26,4 @@ annot <- getBM(attributes = c('ensembl_transcript_id_version',
  colnames(annotL) <- c("GeneID", "Entrez", "Symbol")
 
 
-save(annotL, file="results/DE.01.RData")
+save(annotL, file="results/annot.RData")
