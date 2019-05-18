@@ -1,0 +1,29 @@
+load("results/DE.RData")
+library(dplyr)
+library(biomaRt)
+library(DESeq2)
+library(tidyverse)
+
+ensembl <- useMart("ENSEMBL_MART_ENSEMBL","hsapiens_gene_ensembl", host = "www.ensembl.org")
+ensembl <- useDataset("hsapiens_gene_ensembl", mart=ensembl)
+
+# Set the list of attributes
+resTissue_vV <- results(ddsObj, 
+                  name="tissue_PB_vs_LN", 
+                  alpha = 0.05)
+                  
+                  
+annot <- getBM(attributes = c('ensembl_transcript_id_version', 
+                            'ensembl_gene_id', 
+                            'external_transcript_name',
+                            'external_gene_name',
+                            'entrezgene'),
+             filters = 'ensembl_transcript_id_version', 
+             values = rownames(resTissue_vV ),
+             mart =  ensembl)
+ 
+ annotL <- annot[,c(1,5,4)]
+ colnames(annotL) <- c("GeneID", "Entrez", "Symbol")
+
+
+save(annotL, file="results/DE.01.RData")
