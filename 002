@@ -1,0 +1,33 @@
+load("results/preprocessing_2.RData")
+
+library(tidyverse)
+library(DESeq2)
+
+design <- as.formula(~ tissue + condition)
+modelMatrix <- model.matrix(design, data = sampleinfo)
+modelMatrix
+
+# create the DESeqDataSet object
+ddsObj.raw <- DESeqDataSetFromMatrix(countData = countdata,
+                                     colData = sampleinfo,
+                                     design = design)
+                                     
+vstcounts <- vst(ddsObj.raw, blind=TRUE)
+plotPCA(vstcounts, intgroup=c("condition", "tissue"))
+
+##################
+#ddsObj <- estimateSizeFactors(ddsObj.raw)
+#ddsObj <- estimateDispersions(ddsObj)
+#ddsObj <- nbinomWaldTest(ddsObj)
+##################
+
+# Run DESeq
+ddsObj <- DESeq(ddsObj.raw)
+res <- results(ddsObj, alpha=0.05)
+head(res)
+
+modelMatrix
+resultsNames(ddsObj)
+resLvV <- res
+
+save(ddsObj, countdata, rlogcounts, sampleinfo, logNormalizedCounts, file="results/DE.RData")
