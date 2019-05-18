@@ -1,0 +1,159 @@
+
+load("results/DE.RData")
+load("results/annot.RData")
+library(dplyr)
+library(biomaRt)
+library(DESeq2)
+library(tidyverse)
+library(gplots)
+library(RColorBrewer)
+
+resTissue_vV <- results(ddsObj, 
+                  name="tissue_PB_vs_LN", 
+                  alpha = 0.05)
+
+resTissue_vV  <- as.data.frame(resTissue_vV) %>% 
+    rownames_to_column("GeneID") %>% 
+    left_join( annotL, "GeneID") 
+
+resTissue_vV.nona<- resTissue_vV[!is.na(resTissue_vV$Symbol),]
+resTissue_vV.0.01 <- resTissue_vV.nona[(resTissue_vV.nona$padj < 0.01),]
+resTissue_vV.0.01 <- resTissue_vV.0.01[!is.na(resTissue_vV.0.01$GeneID),]
+dim(resTissue_vV.0.01) #3557
+
+hmDat <- logNormalizedCounts[resTissue_vV.0.01$GeneID,]
+
+# Get some nicer colours
+mypalette <- brewer.pal(11, "RdYlBu")
+# http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+morecols <- colorRampPalette(mypalette)
+# Set up colour vector for celltype variable
+col.sample <- c("purple","orange")[sampleinfo$condition]
+# Plot the heatmap
+
+# Get some nicer colours
+mypalette <- brewer.pal(11, "RdYlBu")
+# http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+morecols <- colorRampPalette(mypalette)
+# Set up colour vector for celltype variable
+col.sample <- c("purple","orange")[sampleinfo$condition]
+# Plot the heatmap
+
+condition_color <- unlist( lapply(sampleinfo$condition, function(x){  
+                  if (grepl("Resistant", x)) "purple"     
+                  else if (grepl("Sensitive", x)) "orange"
+                  }))
+
+tissue_color <- unlist( lapply(sampleinfo$tissue, function(x){  
+                  if (grepl("LN", x)) "red"     
+                  else if (grepl("PB", x)) "green"
+                  else if (grepl("PE", x)) "yellow"
+ 
+ }))       
+ myCols <- cbind(condition_color,tissue_color )
+ colnames(myCols)[1] <- "Condtion"
+ colnames(myCols)[2] <- "Tissue"
+ 
+ #install.packages("heatmap.plus")
+ library("heatmap.plus")
+ 
+ pdf("21-tissue0.01.plus.pdf",width=7,height=5)
+ heatmap.plus(hmDat, 
+          col=rev(morecols(50)),
+          trace="column", 
+          main="LN_vs_PB",
+          ColSideColors=myCols,
+          scale="row")
+dev.off()
+
+######################################
+
+
+resCond_vV <- results(ddsObj, 
+                  name="condition_Sensitive_vs_Resistant", 
+                  alpha = 0.05)
+
+resCond_vV  <- as.data.frame(resCond_vV) %>% 
+    rownames_to_column("GeneID") %>% 
+    left_join( annotL, "GeneID") 
+
+resCond_vV.nona<- resCond_vV[!is.na(resCond_vV$Symbol),]
+resCond_vV.0.01 <- resCond_vV.nona[(resCond_vV.nona$padj < 0.01),]
+resCond_vV.0.01 <- resCond_vV.0.01[!is.na(resCond_vV.0.01$GeneID),]
+dim(resCond_vV.0.01) #3557
+
+hmDat <- logNormalizedCounts[resCond_vV.0.01$GeneID,]
+
+# Get some nicer colours
+mypalette <- brewer.pal(11, "RdYlBu")
+# http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+morecols <- colorRampPalette(mypalette)
+# Set up colour vector for celltype variable
+col.sample <- c("purple","orange")[sampleinfo$condition]
+# Plot the heatmap
+
+# Get some nicer colours
+mypalette <- brewer.pal(11, "RdYlBu")
+# http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+morecols <- colorRampPalette(mypalette)
+# Set up colour vector for celltype variable
+col.sample <- c("purple","orange")[sampleinfo$condition]
+# Plot the heatmap
+
+condition_color <- unlist( lapply(sampleinfo$condition, function(x){  
+                  if (grepl("Resistant", x)) "purple"     
+                  else if (grepl("Sensitive", x)) "orange"
+                  }))
+
+tissue_color <- unlist( lapply(sampleinfo$tissue, function(x){  
+                  if (grepl("LN", x)) "red"     
+                  else if (grepl("PB", x)) "green"
+                  else if (grepl("PE", x)) "yellow"
+ 
+ }))       
+ myCols <- cbind(condition_color,tissue_color )
+ colnames(myCols)[1] <- "Condtion"
+ colnames(myCols)[2] <- "Tissue"
+ 
+ #install.packages("heatmap.plus")
+ library("heatmap.plus")
+ 
+ pdf("21-condition_0.01.plus.pdf",width=7,height=5)
+ heatmap.plus(hmDat, 
+          col=rev(morecols(50)),
+          trace="column", 
+          main="Sensetive_vs_Resistant",
+          ColSideColors=myCols,
+          scale="row")
+dev.off()
+
+##############################################
+##############################################
+trueR <- resCond_vV.0.01[!(resCond_vV.0.01$GeneID %in% resTissue_vV.0.01$GeneID),]
+
+hmDat <- logNormalizedCounts[trueR$GeneID,]
+rownames(hmDat) <- trueR$Symbol
+tissue_color <- unlist( lapply(sampleinfo$tissue, function(x){  
+                  if (grepl("LN", x)) "red"     
+                  else if (grepl("PB", x)) "green"
+                  else if (grepl("PE", x)) "yellow"
+ 
+ }))       
+ myCols <- cbind(condition_color,tissue_color )
+ colnames(myCols)[1] <- "Condtion"
+ colnames(myCols)[2] <- "Tissue"
+ 
+ #install.packages("heatmap.plus")
+ library("heatmap.plus")
+ 
+ pdf("21-IBN-true.01.plus.pdf",width=7,height=5)
+ heatmap.plus(hmDat, 
+          col=rev(morecols(50)),
+          trace="column", 
+          main="Sensetive_vs_Resistant remove tissue effect",
+          ColSideColors=myCols,
+          scale="row")
+dev.off()
+
+
+
