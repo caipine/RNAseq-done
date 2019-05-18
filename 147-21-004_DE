@@ -1,0 +1,24 @@
+load("results/DE.RData")
+load("results/annot.RData")
+library(dplyr)
+library(biomaRt)
+library(DESeq2)
+library(tidyverse)
+
+ddsShrink_Tissue <- lfcShrink(ddsObj, coef="tissue_PB_vs_LN")
+shrinkLvV_Tissue <- as.data.frame(ddsShrink_Tissue) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annotL, "GeneID") 
+dim(shrinkLvV_Tissue)
+shrinkLvV_Tissue <- shrinkLvV_Tissue[!is.na(shrinkLvV_Tissue$Symbol),]
+dim(shrinkLvV_Tissue)
+
+# add a column with the names of only the top 10 genes
+cutoff <- sort(shrinkLvV_Tissue$pvalue)[10]
+shrinkLvV_Tissue <- shrinkLvV_Tissue %>% 
+    mutate(TopGeneLabel=ifelse(pvalue<=cutoff, Symbol, ""))
+    
+ggplot(shrinkLvV_Tissue, aes(x = log2(baseMean), y=log2FoldChange)) + 
+    geom_point(aes(colour=padj < 0.05), shape=20, size=0.5) +
+    geom_text(aes(label=TopGeneLabel)) +
+    labs(x="mean of normalised counts", y="log fold change")
