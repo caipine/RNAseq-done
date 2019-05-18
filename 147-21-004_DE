@@ -5,6 +5,9 @@ library(biomaRt)
 library(DESeq2)
 library(tidyverse)
 
+
+resultsNames(ddsObj)
+
 ddsShrink_Tissue <- lfcShrink(ddsObj, coef="tissue_PB_vs_LN")
 shrinkLvV_Tissue <- as.data.frame(ddsShrink_Tissue) %>%
     rownames_to_column("GeneID") %>% 
@@ -17,8 +20,32 @@ dim(shrinkLvV_Tissue)
 cutoff <- sort(shrinkLvV_Tissue$pvalue)[10]
 shrinkLvV_Tissue <- shrinkLvV_Tissue %>% 
     mutate(TopGeneLabel=ifelse(pvalue<=cutoff, Symbol, ""))
-    
-ggplot(shrinkLvV_Tissue, aes(x = log2(baseMean), y=log2FoldChange)) + 
+
+ pdf("21-tissue_DE.pdf",width=7,height=5)
+ ggplot(shrinkLvV_Tissue, aes(x = log2(baseMean), y=log2FoldChange)) + 
     geom_point(aes(colour=padj < 0.05), shape=20, size=0.5) +
     geom_text(aes(label=TopGeneLabel)) +
     labs(x="mean of normalised counts", y="log fold change")
+  dev.off()
+
+
+ddsShrink_Condition <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
+shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annotL, "GeneID") 
+dim(shrinkLvV_Condition)
+shrinkLvV_Condition <- shrinkLvV_Condition[!is.na(shrinkLvV_Condition$Symbol),]
+dim(shrinkLvV_Condition)
+
+# add a column with the names of only the top 10 genes
+cutoff <- sort(shrinkLvV_Condition$pvalue)[10]
+shrinkLvV_Condition <- shrinkLvV_Condition %>% 
+    mutate(TopGeneLabel=ifelse(pvalue<=cutoff, Symbol, ""))
+
+ pdf("21-Condition_DE.pdf",width=7,height=5)
+ ggplot(shrinkLvV_Condition, aes(x = log2(baseMean), y=log2FoldChange)) + 
+    geom_point(aes(colour=padj < 0.05), shape=20, size=0.5) +
+    geom_text(aes(label=TopGeneLabel)) +
+    labs(x="mean of normalised counts", y="log fold change")
+  dev.off()
+
