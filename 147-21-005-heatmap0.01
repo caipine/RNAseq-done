@@ -156,4 +156,114 @@ tissue_color <- unlist( lapply(sampleinfo$tissue, function(x){
 dev.off()
 
 
+###################################################
+ddsShrink_Condition <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
+shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annotL, "GeneID") 
+shrinkLvV_Condition<- shrinkLvV_Condition[(shrinkLvV_Condition$GeneID %in% trueR$GeneID),]
+dim(shrinkLvV_Condition)
+shrinkLvV_Condition <- shrinkLvV_Condition[!is.na(shrinkLvV_Condition$Symbol),]
+dim(shrinkLvV_Condition)
+
+# add a column with the names of only the top 10 genes
+cutoff <- sort(shrinkLvV_Condition$pvalue)[49]
+shrinkLvV_Condition <- shrinkLvV_Condition %>% 
+    mutate(TopGeneLabel=ifelse(pvalue<=cutoff, Symbol, ""))
+
+ pdf("21-Condition_DE_0.01.pdf",width=7,height=5)
+ ggplot(shrinkLvV_Condition, aes(x = log2(baseMean), y=log2FoldChange)) + 
+    geom_point(aes(colour=padj < 0.05), shape=20, size=0.5) +
+    geom_text(aes(label=TopGeneLabel)) +
+    labs(x="mean of normalised counts", y="log fold change")
+dev.off()
+
+########################################################
+#fgsea
+
+resCond_vV <- results(ddsObj, 
+                  name="condition_Sensitive_vs_Resistant", 
+                  alpha = 0.05)
+
+resCond_vV  <- as.data.frame(resCond_vV) %>% 
+    rownames_to_column("GeneID") %>% 
+    left_join( annotL, "GeneID") 
+    
+
+resCond_vV.nona<- resCond_vV[!is.na(resCond_vV$Symbol),]
+resCond_vV.0.05 <- resCond_vV.nona[(resCond_vV.nona$padj < 0.05),]
+resCond_vV.0.05 <- resCond_vV.0.05[!is.na(resCond_vV.0.05$GeneID),]
+dim(resCond_vV.0.05) #3557
+
+#https://stephenturner.github.io/deseq-to-fgsea/
+res2t <- resCond_vV
+
+res2 <- res2t %>% 
+  dplyr::select(Symbol, stat) %>% 
+  na.omit() %>% 
+  distinct() %>% 
+  group_by(Symbol) %>% 
+  summarize(stat=mean(stat))
+res2
+
+library(fgsea)
+ranks <- deframe(res2)
+head(ranks, 20)
+#pathways.hallmark <- gmtPathways("msigdb.v6.2.symbols.gmt")
+
+pathways.hallmark %>% 
+  head() %>% 
+  lapply(head)
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
+
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+  
+ library("DT")
+# Show in a nice table:
+fgseaResTidy %>% 
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
+  arrange(padj) #%>% 
+  #DT::datatable()
+  
+    
+ggplot(fgseaResTidy[c(1:50,17700:17806),], aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") + 
+  theme_minimal()
+
+
+
+
+
+
+pathways.hallmark <- gmtPathways("c2.cp.kegg.v6.2.symbols.gmt")
+pathways.hallmark %>% 
+  head() %>% 
+  lapply(head)
+  
+  fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
+
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+  
+ library("DT")
+# Show in a nice table:
+fgseaResTidy %>% 
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
+  arrange(padj) #%>% 
+  #DT::datatable()
+  
+    
+ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") + 
+  theme_minimal()
+
 
