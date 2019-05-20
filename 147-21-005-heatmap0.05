@@ -182,3 +182,18 @@ dev.off()
 
 
 
+
+
+library("ggrepel")
+shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05, "FDR < 0.05", "Not Sig")
+ggplot(shrinkLvV_Condition, aes(x = -log2FoldChange, y= -log10(padj) )) + 
+    geom_point(aes(colour= Significant), shape=20, size=3) +
+    scale_color_manual(values = c("red", "grey")) +
+ theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  geom_text_repel(
+    data = subset(shrinkLvV_Condition, padj < 0.05),
+    aes(label = Symbol),
+    size = 5,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
