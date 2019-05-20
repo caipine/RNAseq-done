@@ -1,0 +1,40 @@
+
+##########################################
+sampleinfo <- read.delim("samplesM21.txt", stringsAsFactors=F)
+namei <- "DGAT2"
+tmp <- hmDat[namei,] %>%
+         t() %>%
+         t() 
+colnames(tmp) <-  "FoldChange"
+tmp <- cbind(sampleinfo,tmp)
+tmp
+g <- ggplot(tmp, aes(condition, FoldChange))
+g + geom_boxplot() + 
+  geom_dotplot(binaxis='y', 
+               stackdir='center', 
+               dotsize = .5, 
+               fill="black") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  labs( x="Status",
+        y=namei)
+##########################
+
+namei <- "FADS1"
+tmp <- 0
+tmp <- hmDat[namei,] %>%
+         t() %>%
+         t() 
+colnames(tmp) <- "FoldChange"
+tmp <- cbind(sampleinfo,tmp)
+tmp
+
+g <- ggplot(tmp, aes(condition, FoldChange))
+g + geom_boxplot() + 
+  geom_dotplot(binaxis='y', 
+               stackdir='center', 
+               dotsize = .5, 
+               fill="black") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  labs( x="Status",
+        y=namei)
+
