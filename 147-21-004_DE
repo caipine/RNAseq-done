@@ -52,16 +52,26 @@ shrinkLvV_Condition <- shrinkLvV_Condition %>%
 
 
 
+ddsShrink_Condition_tmp <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
+shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition_tmp) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annotL, "GeneID") 
+dim(shrinkLvV_Condition)
+shrinkLvV_Condition <- shrinkLvV_Condition[!is.na(shrinkLvV_Condition$Symbol),]
+dim(shrinkLvV_Condition)
+
   library("ggrepel")
 #shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05, "FDR < 0.1", "Not Sig")
-shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05 & abs(shrinkLvV_Condition$log2FoldChange) >1, "FDR < 0.1", "Not Sig")
+shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05 & abs(shrinkLvV_Condition$log2FoldChange) >1, "FDR < 0.1", "Not_Sig")
 
 
-ggplot(shrinkLvV_Condition, aes(x = -log2FoldChange, y= -log10(padj) )) + 
+ pdf("21-Condition_DE_label.pdf",width=20,height=20)
+ggplot(shrinkLvV_Condition, aes(x = log2FoldChange, y= -log10(padj) )) + 
     geom_point(aes(colour= Significant), shape=20, size=3) +
     scale_color_manual(values = c("red", "grey")) +
     theme_bw(base_size = 12) + theme(legend.position = "bottom") +
-    geom_hline(aes(yintercept=2)) +
+    geom_hline(yintercept=2, colour="blue", linetype="dashed") +
+    geom_vline(xintercept = -1:1, colour="red", linetype="dashed")+
    geom_text_repel(
     data = subset(shrinkLvV_Condition, (padj < 0.05 & abs(log2FoldChange) >1 )),
     aes(label = Symbol),
@@ -69,4 +79,69 @@ ggplot(shrinkLvV_Condition, aes(x = -log2FoldChange, y= -log10(padj) )) +
     box.padding = unit(0.35, "lines"),
     point.padding = unit(0.3, "lines")
 )
+dev.off()
+
+
+pdf("21-Condition_DE_label2.pdf",width=20,height=20)
+ggplot(shrinkLvV_Condition, aes(x = log2FoldChange, y= -log10(padj) )) + 
+    geom_point(aes(colour= Significant), shape=20, size=3) +
+    scale_color_manual(values = c("red", "grey")) +
+    theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+    geom_hline(yintercept=2, colour="blue", linetype="dashed") +
+    geom_vline(xintercept = -1:1, colour="red", linetype="dashed")+
+   geom_text_repel(
+    data = subset(shrinkLvV_Condition, (padj < 0.05 )),
+    aes(label = Symbol),
+    size = 5,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+)
+dev.off()
+
+
+
+
+
+############################
+shrinkLvV_Condition.nona<- shrinkLvV_Condition[!is.na(shrinkLvV_Condition$padj),]
+shrinkLvV_Condition.0.01<- shrinkLvV_Condition.nona[(shrinkLvV_Condition.nona$padj < 0.01),]
+
+ensembl <- useMart("ENSEMBL_MART_ENSEMBL","hsapiens_gene_ensembl", host = "www.ensembl.org")
+ensembl <- useDataset("hsapiens_gene_ensembl", mart=ensembl)
+
+description                 
+
+shrinkLvV_Condition.nona<- shrinkLvV_Condition[!is.na(shrinkLvV_Condition$padj),]
+shrinkLvV_Condition.0.01<- shrinkLvV_Condition.nona[(shrinkLvV_Condition.nona$padj < 0.01 & shrinkLvV_Condition.nona$log2FoldChange < -1),]
+shrinkLvV_Condition.0.01              
+annot <- getBM(attributes = c('ensembl_transcript_id_version', 
+                            'ensembl_gene_id', 
+                            'external_transcript_name',
+                            'external_gene_name',
+                            'entrezgene',
+                            'description'),
+             filters = 'external_gene_name', 
+             values = shrinkLvV_Condition.0.01$Symbol,
+mart = ensembl)
+
+x <- annot[,c(4,6)]
+y <- x[!duplicated(x),]
+write.table(y, "con0.01.txt", row.names = F)
+
+
+shrinkLvV_Condition.0.0105<- shrinkLvV_Condition.nona[(shrinkLvV_Condition.nona$padj > 0.01 & shrinkLvV_Condition.nona$padj < 0.05 & shrinkLvV_Condition.nona$log2FoldChange < -1),]
+shrinkLvV_Condition.0.0105              
+annot <- getBM(attributes = c('ensembl_transcript_id_version', 
+                            'ensembl_gene_id', 
+                            'external_transcript_name',
+                            'external_gene_name',
+                            'entrezgene',
+                            'description'),
+             filters = 'external_gene_name', 
+             values = shrinkLvV_Condition.0.0105$Symbol,
+mart = ensembl)
+
+x <- annot[,c(4,6)]
+y <- x[!duplicated(x),]
+write.table(y, "con0.0105.txt", row.names = F, quote = F)
 
