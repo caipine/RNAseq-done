@@ -171,11 +171,17 @@ cutoff <- sort(shrinkLvV_Condition$pvalue)[49]
 shrinkLvV_Condition <- shrinkLvV_Condition %>% 
     mutate(TopGeneLabel=ifelse(pvalue<=cutoff, Symbol, ""))
 
- pdf("21-Condition_DE_0.01.pdf",width=7,height=5)
+ pdf("21-Condition_DE_0.01.pdf",width=10,height=20)
  ggplot(shrinkLvV_Condition, aes(x = log2(baseMean), y=log2FoldChange)) + 
     geom_point(aes(colour=padj < 0.05), shape=20, size=0.5) +
     geom_text(aes(label=TopGeneLabel)) +
     labs(x="mean of normalised counts", y="log fold change")
+     
+     
+     ggplot(shrinkLvV_Condition, aes(x = log2(baseMean), y=log2FoldChange)) + 
+    geom_point(aes(colour=padj < 0.05), shape=20, size=3) +
+    geom_text(aes(label=TopGeneLabel), size=3) +
+labs(x="mean of normalised counts", y="log fold change")
 dev.off()
 
 ########################################################
