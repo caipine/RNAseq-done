@@ -29,8 +29,8 @@ shrinkLvV_Tissue <- shrinkLvV_Tissue %>%
   dev.off()
 
 
-ddsShrink_Condition <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
-shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition) %>%
+ddsShrink_Condition_tmp <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
+shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition_tmp) %>%
     rownames_to_column("GeneID") %>% 
     left_join(annotL, "GeneID") 
 dim(shrinkLvV_Condition)
@@ -48,4 +48,25 @@ shrinkLvV_Condition <- shrinkLvV_Condition %>%
     geom_text(aes(label=TopGeneLabel)) +
     labs(x="mean of normalised counts", y="log fold change")
   dev.off()
+  
+
+
+
+  library("ggrepel")
+#shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05, "FDR < 0.1", "Not Sig")
+shrinkLvV_Condition$Significant <- ifelse(shrinkLvV_Condition$padj < 0.05 & abs(shrinkLvV_Condition$log2FoldChange) >1, "FDR < 0.1", "Not Sig")
+
+
+ggplot(shrinkLvV_Condition, aes(x = -log2FoldChange, y= -log10(padj) )) + 
+    geom_point(aes(colour= Significant), shape=20, size=3) +
+    scale_color_manual(values = c("red", "grey")) +
+    theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+    geom_hline(aes(yintercept=2)) +
+   geom_text_repel(
+    data = subset(shrinkLvV_Condition, (padj < 0.05 & abs(log2FoldChange) >1 )),
+    aes(label = Symbol),
+    size = 5,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+)
 
