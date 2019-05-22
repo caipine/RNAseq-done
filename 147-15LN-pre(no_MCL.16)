@@ -1,0 +1,50 @@
+library(DESeq2)
+library(tidyverse)
+
+# Read the sample information into a data frame
+sampleinfo <- read.delim("samplesM.txt", stringsAsFactors=F)
+sampleinfo
+sampleinfo<- sampleinfo[(sampleinfo$tissue == "LN") & !(sampleinfo$samples %in% "MCL.16"),]
+
+sampleinfo
+
+# Read the data into R
+cts6 <- read.table("counts/all.tsv006", row.names=1, header=T)
+cts7 <- read.table("counts/all.tsv007", row.names=1, header=T)
+seqdata <- cts6 +cts7
+head(seqdata)
+
+seqdata <- seqdata[,colnames(seqdata) %in% sampleinfo$samples]
+
+dim(seqdata)
+keep <- rowSums(seqdata) > 10
+countdata <- seqdata[keep,]
+dim(countdata)
+countdata <- as.matrix(countdata)
+
+librarySizes <- colSums(countdata)
+barplot(librarySizes, 
+        names=names(librarySizes), 
+        las=2, 
+        main="Barplot of library sizes")
+abline(h=20e6, lty=2)
+
+
+# Get log2 counts per million
+logcounts <- log2(countdata + 1)
+
+# make a colour vector
+tissueCol <- as.numeric(factor(sampleinfo$tissue)) + 1
+# Check distributions of samples using boxplots
+boxplot(logcounts, 
+        xlab="", 
+        ylab="Log2(Counts)",
+        las=2,
+        col=tissueCol)
+# Let's add a blue horizontal line that corresponds to the median logCPM
+abline(h=median(as.matrix(logcounts)), col="blue")
+
+
+library(ggfortify)
+rlogcounts <- rlog(countdata)
+save(countdata, rlogcounts, sampleinfo, file="results/preprocessing.RData")
