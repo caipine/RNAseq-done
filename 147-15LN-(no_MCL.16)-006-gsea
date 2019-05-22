@@ -80,3 +80,4 @@ plotEnrichment(pathways.hallmark[["HALLMARK_E2F_TARGETS"]], ranks) +
 labs(title="HALLMARK_E2F_TARGETS")
 
 dev.off()
+
