@@ -44,8 +44,10 @@ pathways.hallmark <- gmtPathways("h.all.v6.2.symbols.gmt")
 pathways.hallmark %>% 
   head() %>% 
   lapply(head)
+  
 fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
 
+###all pathways
 fgseaResTidy <- fgseaRes %>%
   as_tibble() %>%
   arrange(desc(NES))
@@ -56,13 +58,27 @@ fgseaResTidy %>%
   dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
   arrange(padj) #%>% 
   #DT::datatable()
-      
-ggplot(fgseaResTidy[c(1:50,17700:17806),], aes(reorder(pathway, NES), NES)) +
+            
+     
+ pdf("21-IBN-gsea.pdf",width=10,height=10)   
+ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
   labs(x="Pathway", y="Normalized Enrichment Score",
        title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
+theme_minimal()
+
+plotEnrichment(pathways.hallmark[["HALLMARK_G2M_CHECKPOINT"]], ranks) +
+labs(title="HALLMARK_G2M_CHECKPOINT")
+
+plotEnrichment(pathways.hallmark[["HALLMARK_OXIDATIVE_PHOSPHORYLATION"]], ranks) +
+labs(title="HALLMARK_OXIDATIVE_PHOSPHORYLATION")
+
+
+plotEnrichment(pathways.hallmark[["HALLMARK_E2F_TARGETS"]], ranks) +
+labs(title="HALLMARK_E2F_TARGETS")
+
+dev.off()
 
 
 
@@ -75,10 +91,7 @@ ggplot(fgseaResTidy[c(1:50,17700:17806),], aes(reorder(pathway, NES), NES)) +
 
 
 
-
-
-
-
+=========================================
 
 #kegg****************
 
