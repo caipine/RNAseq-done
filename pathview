@@ -1,0 +1,77 @@
+load("results/DE.RData")
+load("results/annot.RData")
+library(dplyr)
+library(biomaRt)
+library(DESeq2)
+library(tidyverse)
+library(gplots)
+library(RColorBrewer)
+
+library(pathview)
+library(gage)
+library(gageData)
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+head(kegg.sets.hs, 3)
+
+
+resCond_vV <- results(ddsObj, 
+                  name="condition_Sensitive_vs_Resistant", 
+                  alpha = 0.05)
+
+resCond_vV  <- as.data.frame(resCond_vV) %>% 
+    rownames_to_column("GeneID") %>% 
+left_join( annotL, "GeneID") 
+
+shrinkLvV <- resCond_vV
+
+
+dim(shrinkLvV)
+res.nona<- shrinkLvV[!is.na(shrinkLvV$padj),]
+dim(res.nona)
+res2 <- res.nona[(res.nona$padj < 0.05),]
+dim(res2)
+
+#res.nona2<- res2[!is.na(res2$Entrez),]
+foldchanges = res2$log2FoldChange
+names(foldchanges) = res2$Entrez
+head(foldchanges)
+
+
+# Get the results
+keggres = gage(foldchanges, gsets=kegg.sets.hs, same.dir=TRUE)
+
+# Look at both up (greater), down (less), and statatistics.
+lapply(keggres, head)
+
+
+
+#ok
+greater <- data.frame(keggres$greater)
+greater <- greater[order(-greater$set.size),]
+tail(greater)
+keggresids <- substr(rownames(greater), start=1, stop=8)[1:10]
+keggresids
+ [1] "hsa04310" "hsa04510" "hsa04144" "hsa04120" "hsa04010" "hsa04910"
+ [7] "hsa04340" "hsa00230" "hsa04530" "hsa04630"
+
+less <- data.frame(keggres$less)
+less <- greater[order(less$set.size),]
+keggresids <- substr(rownames(less), start=1, stop=8)[1:10]
+keggresids
+
+
+
+# Define plotting function for applying later
+plot_pathway = function(pid) pathview(gene.data=foldchanges, pathway.id=pid, species="hsa", new.signature=FALSE)
+
+# plot multiple pathways (plots saved to disk and returns a throwaway list object)
+tmp = sapply(keggresids, function(pid) pathview(gene.data=foldchanges, pathway.id=pid, species="hsa"))
+
+
+
+res3 <- res2[!is.na(res2$Symbol),]
+res4 <- res3[(res3$log2FoldChange < 0),]
+
+
