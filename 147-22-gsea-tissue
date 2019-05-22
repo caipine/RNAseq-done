@@ -18,13 +18,11 @@ resCond_vV <- results(ddsObj,
 resCond_vV  <- as.data.frame(resCond_vV) %>% 
     rownames_to_column("GeneID") %>% 
     left_join( annotL, "GeneID") 
-    
+  
 
-resCond_vV.nona<- resCond_vV[!is.na(resCond_vV$Symbol),]
-resCond_vV.0.05 <- resCond_vV.nona[(resCond_vV.nona$padj < 0.05),]
-resCond_vV.0.05 <- resCond_vV.0.05[!is.na(resCond_vV.0.05$GeneID),]
-dim(resCond_vV.0.05) #3557
-
+#resCond_vV.0.05 <- resCond_vV.nona[(resCond_vV.nona$padj < 0.05),]
+#resCond_vV.0.05 <- resCond_vV.0.05[!is.na(resCond_vV.0.05$GeneID),]
+#dim(resCond_vV.0.05) 
 #https://stephenturner.github.io/deseq-to-fgsea/
 res2t <- resCond_vV
 
@@ -40,7 +38,8 @@ library(fgsea)
 ranks <- deframe(res2)
 head(ranks, 20)
 
-pathways.hallmark <- gmtPathways("msigdb.v6.2.symbols.gmt")
+#pathways.hallmark <- gmtPathways("msigdb.v6.2.symbols.gmt")
+pathways.hallmark <- gmtPathways("h.all.v6.2.symbols.gmt")
 
 pathways.hallmark %>% 
   head() %>% 
@@ -57,8 +56,7 @@ fgseaResTidy %>%
   dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
   arrange(padj) #%>% 
   #DT::datatable()
-  
-    
+      
 ggplot(fgseaResTidy[c(1:50,17700:17806),], aes(reorder(pathway, NES), NES)) +
   geom_col(aes(fill=padj<0.05)) +
   coord_flip() +
@@ -70,6 +68,19 @@ ggplot(fgseaResTidy[c(1:50,17700:17806),], aes(reorder(pathway, NES), NES)) +
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#kegg****************
 
 pathways.hallmark <- gmtPathways("c2.cp.kegg.v6.2.symbols.gmt")
 pathways.hallmark %>% 
