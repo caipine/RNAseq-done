@@ -1,0 +1,82 @@
+load("results/DE.RData")
+load("results/annot.RData")
+library(dplyr)
+library(biomaRt)
+library(DESeq2)
+library(tidyverse)
+library(gplots)
+library(RColorBrewer)
+
+
+#fgsea
+
+resCond_vV <- results(ddsObj, 
+                  name="condition_Sensitive_vs_Resistant", 
+                  alpha = 0.05)
+save(resCond_vV, file = "results/resCond_vV.data")
+#load("results/resCond_vV.data")
+
+resCond_vV  <- as.data.frame(resCond_vV) %>% 
+    rownames_to_column("GeneID") %>% 
+    left_join( annotL, "GeneID") 
+  
+
+#resCond_vV.0.05 <- resCond_vV.nona[(resCond_vV.nona$padj < 0.05),]
+#resCond_vV.0.05 <- resCond_vV.0.05[!is.na(resCond_vV.0.05$GeneID),]
+#dim(resCond_vV.0.05) 
+#https://stephenturner.github.io/deseq-to-fgsea/
+res2t <- resCond_vV
+
+res2 <- res2t %>% 
+  dplyr::select(Symbol, stat) %>% 
+  na.omit() %>% 
+  distinct() %>% 
+  group_by(Symbol) %>% 
+  summarize(stat=mean(stat))
+res2
+
+library(fgsea)
+ranks <- deframe(res2)
+head(ranks, 20)
+
+#pathways.hallmark <- gmtPathways("msigdb.v6.2.symbols.gmt")
+pathways.hallmark <- gmtPathways("h.all.v6.2.symbols.gmt")
+
+pathways.hallmark %>% 
+  head() %>% 
+  lapply(head)
+  
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
+
+###all pathways
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+  
+ library("DT")
+# Show in a nice table:
+fgseaResTidy %>% 
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
+  arrange(padj) #%>% 
+  #DT::datatable()
+            
+     
+ pdf("21-IBN-gsea.pdf",width=10,height=10)   
+ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") + 
+theme_minimal()
+
+plotEnrichment(pathways.hallmark[["HALLMARK_G2M_CHECKPOINT"]], ranks) +
+labs(title="HALLMARK_G2M_CHECKPOINT")
+
+plotEnrichment(pathways.hallmark[["HALLMARK_OXIDATIVE_PHOSPHORYLATION"]], ranks) +
+labs(title="HALLMARK_OXIDATIVE_PHOSPHORYLATION")
+
+
+plotEnrichment(pathways.hallmark[["HALLMARK_E2F_TARGETS"]], ranks) +
+labs(title="HALLMARK_E2F_TARGETS")
+
+dev.off()
