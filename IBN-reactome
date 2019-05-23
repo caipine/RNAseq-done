@@ -1,0 +1,42 @@
+
+
+
+library(ReactomePA)
+
+resCond_vV.0.05 <- resCond_vV[(resCond_vV$padj < 0.05),]
+resCond_vV.0.05 <- resCond_vV.0.05[!is.na(resCond_vV.0.05$GeneID),]
+resCond_vV.0.05m <- resCond_vV.0.05[(resCond_vV.0.05$log2FoldChange < -2),] 
+length(resCond_vV.0.05$Entrez[!is.na(resCond_vV.0.05$Entrez)])
+
+resCond_vV.0.05m <- resCond_vV.0.05[!is.na(resCond_vV.0.05$Entrez),]
+geneList <- resCond_vV.0.05m$log2FoldChange
+
+names(geneList) <- resCond_vV.0.05m$Entrez
+geneList
+geneList <- geneList[order(geneList, decreasing = T)]
+
+de <- names(geneList)[abs(geneList) > 1.5]
+
+
+
+ x <- enrichPathway(gene=de,pvalueCutoff=0.05, readable=T)
+head(as.data.frame(x))
+
+barplot(x, showCategory=8)
+
+dotplot(x, showCategory=15)
+
+emapplot(x)
+
+cnetplot(x, categorySize="pvalue", foldChange=resCond_vV.0.05m)
+
+?????????????????
+
+
+y <- gsePathway(geneList, nPerm=10000,
+                pvalueCutoff=0.2,
+                pAdjustMethod="BH", verbose=FALSE)
+res <- as.data.frame(y)
+head(res)
+gseaplot(y, geneSetID = "R-HSA-69278")
+viewPathway("E2F mediated regulation of DNA replication", readable=TRUE, foldChange=geneList)
