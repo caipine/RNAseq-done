@@ -1,0 +1,91 @@
+
+
+keep <- rowSums(seqdata) > 10
+countdata <- seqdata[keep,]
+dim(countdata)
+countdata <- as.matrix(countdata)
+
+librarySizes <- colSums(countdata)
+barplot(librarySizes, 
+        names=names(librarySizes), 
+        las=2, 
+        main="Barplot of library sizes")
+abline(h=20e6, lty=2)
+
+
+# Get log2 counts per million
+logcounts <- log2(countdata + 1)
+
+# make a colour vector
+tissueCol <- as.numeric(factor(sampleinfo$tissue)) + 1
+# Check distributions of samples using boxplots
+boxplot(logcounts, 
+        xlab="", 
+        ylab="Log2(Counts)",
+        las=2,
+        col=tissueCol)
+# Let's add a blue horizontal line that corresponds to the median logCPM
+abline(h=median(as.matrix(logcounts)), col="blue")
+
+library(ggfortify)
+rlogcounts <- vst(countdata)
+
+countVar <- apply(rlogcounts, 1, var)
+# Get the row numbers for the top 500 most variable genes
+highVar <- order(countVar, decreasing=TRUE)[1:500]
+# Subset logcounts matrix
+hmDat <- rlogcounts[highVar,]
+
+
+library(gplots)
+library(RColorBrewer)
+
+# Get some nicer colours
+mypalette <- brewer.pal(11, "RdYlBu")
+# http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+morecols <- colorRampPalette(mypalette)
+# Set up colour vector for celltype variable
+col.sample <- c("purple","orange")[sampleinfo$condition]
+# Plot the heatmap
+
+condition_color <- unlist( lapply(sampleinfo$condition, function(x){  
+                  if (grepl("Resistant", x)) "purple"     
+                  else if (grepl("Sensitive", x)) "orange"
+                  }))
+
+tissue_color <- unlist( lapply(sampleinfo$tissue, function(x){  
+                  if (grepl("Spleen&LN", x)) "red"     
+                  else if (grepl("PB", x)) "green"
+                  else if (grepl("Apheresis", x)) "yellow"
+                  else if (grepl("Spleen", x)) "blue"
+                  else if (grepl("PE", x)) "purple"
+                  else if (grepl("LN", x)) "pink"
+                })) 
+
+batch_color <- unlist( lapply(sampleinfo$Batch, function(x){  
+                  if (grepl("1", x)) "purple"     
+                  else if (grepl("2", x)) "orange"
+		  else if (grepl("3", x)) "blue"
+}))
+
+
+ myCols <- cbind(condition_color,tissue_color,batch_color )
+ colnames(myCols)[1] <- "Condtion"
+ colnames(myCols)[2] <- "Tissue"
+  colnames(myCols)[3] <- "Batch"
+
+ #install.packages("heatmap.plus")
+ library("heatmap.plus")
+ 
+ pdf("21Heatmap_unsuper.plus.pdf",width=10,height=10)
+ heatmap.plus(hmDat, 
+          col=rev(morecols(50)),
+          trace="column", 
+          main="Top 500 most variable genes across samples",
+          ColSideColors=myCols,
+          scale="row",
+          margins = c(10,30)) 
+legend(0.8,1,legend=c("Spleen&LN","PB","Apheresis","Spleen","PE","LN"),fill=c("red","green","yellow","blue","purple","pink"),border = F)
+legend(0.8,0.7,legend=c("Resistant","Sensitive"),fill=c("purple","orange"),border = F) 
+dev.off()
+
