@@ -11,6 +11,8 @@ resultsNames(ddsObj)
 
 ddsShrink_Condition_tmp <- lfcShrink(ddsObj, coef="condition_Sensitive_vs_Resistant")
 #or load("results/ddsShrink_Condition_tmp.RData")
+save(ddsShrink_Condition_tmp, file="results/ddsShrink_Condition_tmp.RData")
+load("results/ddsShrink_Condition_tmp.RData")
 
 
 shrinkLvV_Condition <- as.data.frame(ddsShrink_Condition_tmp) %>%
@@ -58,4 +60,3 @@ ggplot(shrinkLvV_Condition, aes(x = log2FoldChange, y= -log10(padj) )) +
 )
 dev.off()
 
-save(ddsShrink_Condition_tmp, file="results/ddsShrink_Condition_tmp.RData")
