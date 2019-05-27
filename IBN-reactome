@@ -14,6 +14,7 @@ geneList <- resCond_vV.0.05m$log2FoldChange
 names(geneList) <- resCond_vV.0.05m$Entrez
 geneList
 geneList <- geneList[order(geneList, decreasing = T)]
+geneList<- geneList[unique(names(geneList))]
 
 de <- names(geneList)[abs(geneList) > 1.5]
 
@@ -30,9 +31,7 @@ emapplot(x)
 
 cnetplot(x, categorySize="pvalue", foldChange=resCond_vV.0.05m)
 
-?????????????????
-
-
+#############
 y <- gsePathway(geneList, nPerm=10000,
                 pvalueCutoff=0.2,
                 pAdjustMethod="BH", verbose=FALSE)
@@ -40,3 +39,12 @@ res <- as.data.frame(y)
 head(res)
 gseaplot(y, geneSetID = "R-HSA-69278")
 viewPathway("E2F mediated regulation of DNA replication", readable=TRUE, foldChange=geneList)
+
+tiff("IBN000-Reacome-Cell Cycle Checkpoints.tif",width=1500,height=1500)   
+viewPathway("Cell Cycle Checkpoints", readable=TRUE, foldChange=geneList)
+dev.off()
+
+
+tiff("IBN000-Reacome-MAPK family signaling cascades.tif",width=2000,height=2000)   
+viewPathway("MAPK family signaling cascades", readable=TRUE, foldChange=geneList)
+dev.off()
